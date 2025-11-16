@@ -1,5 +1,11 @@
+
 var img
 var song
+
+//mic
+var mic;
+var amplitude;
+
 var fft 
 var particles = []
 
@@ -17,22 +23,38 @@ function setup() {
   angleMode(DEGREES)
   imageMode(CENTER)
   rectMode(CENTER)
+  
+
+  mic = new p5.AudioIn();
+  mic.start();
+  amplitude = new p5.Amplitude()
+
   fft = new p5.FFT(0.3);
 
   img.filter(BLUR, 2)
 }
 
+function mousePressed(){
+  userStartAudio();
+  mic.start();
+
+  amplitude.setInput(mic);
+  fft.setInput(mic);
+
+}
+
 function draw() {
   background(0);
-  
-
   translate(width/2, height/2) // center circle
 
   fft.analyze()
-  amp = fft.getEnergy(20, 200)
+
+  let micLevel = amplitude.getLevel();
+  amp = map(micLevel, 0, 0.5, 0, 255);
+  amp - constrain(amp, 0, 255)
 
   push()
-  if (amp > 230){
+  if (amp > 120){
     rotate(random(-0.5, 0.5))
   }
  
@@ -49,6 +71,7 @@ function draw() {
   noFill()
 
   var wave = fft.waveform();
+
 
   // draw circle left and right side - smart (have two loops -1 and 1) mult t by sin to mirror
   for (var t = -1; t <= 1; t += 2){
@@ -82,15 +105,6 @@ function draw() {
 
 }
 
-function mouseClicked() {
-  if (song.isPlaying()){
-    song.pause()
-    noLoop()
-  }else{
-    song.play()
-    loop()
-  }
-}
 
 class Particle {
   constructor() {
