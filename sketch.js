@@ -6,6 +6,9 @@ var song
 var mic;
 var amplitude;
 
+//video
+let video;
+
 var fft 
 var particles = []
 
@@ -20,18 +23,17 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  angleMode(DEGREES)
-  imageMode(CENTER)
-  rectMode(CENTER)
-  
 
   mic = new p5.AudioIn();
   mic.start();
   amplitude = new p5.Amplitude()
 
-  fft = new p5.FFT(0.3);
+  //video setup
+  video = createCapture(VIDEO);
+  video.size(windowWidth, windowHeight);
+  video.hide()
 
-  img.filter(BLUR, 2)
+  fft = new p5.FFT(0.3);
 }
 
 function mousePressed(){
@@ -44,8 +46,22 @@ function mousePressed(){
 }
 
 function draw() {
-  background(0);
-  translate(width/2, height/2) // center circle
+  background(255);
+
+  let gridSize = int(map(mouseX, 0, width, 15, 50));
+
+  video.loadPixels();
+  for (let y=0; y<video.height; y+= gridSize){
+    for(let x=0; x <video.width; x+= gridSize){
+      let index = (y * video.width + x) * 4;
+      let r = video.pixels[index];
+      let dia = map(r, 0, 255, gridSize, 2);
+
+      fill(0)
+      noStroke()
+      circle(x+gridSize / 2, y + gridSize/2, dia)
+    }
+  }
 
   fft.analyze()
 
@@ -53,55 +69,6 @@ function draw() {
   amp = map(micLevel, 0, 0.5, 0, 255);
   amp - constrain(amp, 0, 255)
 
-  push()
-  if (amp > 120){
-    rotate(random(-0.5, 0.5))
-  }
- 
-  image(img, 0, 0, width + 100, height + 100)
-  pop()
-
-  var alpha = map(amp, 0, 255, 180, 150) // darker shade
-  fill(0, alpha)
-  noStroke()
-  rect(0, 0, width, height)
-  
-  stroke(255)
-  strokeWeight(3)
-  noFill()
-
-  var wave = fft.waveform();
-
-
-  // draw circle left and right side - smart (have two loops -1 and 1) mult t by sin to mirror
-  for (var t = -1; t <= 1; t += 2){
-    
-      beginShape()
-      for (var i = 0; i <= 180; i+= 0.5){
-        var index = floor(map(i, 0, 180, 0, wave.length - 1))
-
-        var r = map(wave[index], -1, 1, 150, 350);
-
-        var x = r * (t * sin(i))
-        var y = r * cos(i)
-        vertex(x, y)
-      }
-      endShape()
-    
-  }
-
-  var p = new Particle()
-  particles.push(p)
-
-  for (var i = particles.length - 1; i >= 0; i--){
-    if(!particles[i].edges()){
-      particles[i].update(amp > 230) // depending on audio
-      particles[i].show()
-    } else{
-      particles.splice(i, 1)
-    }
-    
-  }
 
 }
 
